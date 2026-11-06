@@ -92,12 +92,14 @@ demo/demo.sh             Self-explaining 4-step demo  +  client.py (minimal MCP 
 - A **public Route 53 hosted zone**. The internal ALB gets a public ACM certificate and an alias record in it —
   AgentCore Gateway requires an `https` server URL with a publicly trusted certificate.
 - Node.js 22+, Python 3.12+, AWS CLI v2. No Docker needed (images are pulled from Docker Hub by ECS, pinned by digest).
+  The steps below call `python3.12` explicitly: on Amazon Linux 2023 `python3` is 3.9, which can't install the pinned
+  demo and test dependencies (`sudo dnf install -y python3.12` if it's missing).
 
 ## Deploy (~10 min)
 
 ```bash
 npm ci && npm test                       # tsc + jest + cdk-nag
-python3 -m venv .venv && .venv/bin/pip install -r demo/requirements.txt pytest==9.2.0
+python3.12 -m venv .venv && .venv/bin/pip install -r demo/requirements.txt pytest==9.2.0
 .venv/bin/python -m pytest interceptor -q
 npx cdk deploy --require-approval never \
   -c domainName=kta-api.example.com -c hostedZoneId=Z0123456789ABC -c hostedZoneName=example.com
@@ -149,8 +151,14 @@ npx cdk destroy --force -c domainName=kta-api.example.com -c hostedZoneId=Z01234
 
 CloudFormation deletes the target first (it depends on the ALB, service, DNS and security groups); AgentCore removes the
 managed resource gateway with it, so the security groups delete cleanly. The Kong secret is deleted without a recovery
-window, and the KMS key is scheduled for deletion with a 7-day waiting period. One thing stays behind: ACM's `_<hash>.<domainName>` validation CNAME in your hosted zone — delete it by hand
-if you won't redeploy.
+window, and the KMS key is scheduled for deletion with a 7-day waiting period. Two things stay behind:
+
+- ACM's `_<hash>.<domainName>` validation CNAME in your hosted zone. Delete it by hand if you won't redeploy.
+- The log group ECS creates for Container Insights, outside the stack:
+
+  ```bash
+  aws logs delete-log-group --log-group-name /aws/ecs/containerinsights/kta-cluster/performance
+  ```
 
 ## Security notes
 
