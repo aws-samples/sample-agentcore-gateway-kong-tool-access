@@ -1,0 +1,31 @@
+{
+  "name": "agentcore-kong-tool-access",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT-0",
+  "description": "Per-agent tool access for Kong-protected APIs with Amazon Bedrock AgentCore Gateway",
+  "bin": { "app": "bin/app.js" },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "tsc --noEmit && jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@types/jest": "30.0.0",
+    "@types/node": "22.20.5",
+    "aws-cdk": "2.1145.0",
+    "jest": "30.5.2",
+    "ts-jest": "29.4.15",
+    "ts-node": "10.9.2",
+    "typescript": "5.6.3"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.273.0",
+    "cdk-nag": "2.38.2",
+    "constructs": "10.8.1"
+  },
+  "overrides": {
+    "glob": "14.0.3",
+    "minimatch": "11.0.4"
+  }
+}

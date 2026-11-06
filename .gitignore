@@ -1,0 +1,31 @@
+node_modules/
+cdk.out/
+cdk.context.json
+*.js
+!jest.config.js
+*.d.ts
+.venv/
+__pycache__/
+.pytest_cache/
+.DS_Store
+.env
+protoshield-*/
+
+# Build output
+*.tsbuildinfo
+dist/
+
+# Secrets and local env
+.env.*
+*.pem
+
+# Security scan output (ASH, ProtoShield)
+security-scan-results/
+.ash/*
+!.ash/.ash.yaml
+ash_output/
+.protoshield/
+
+# Threat model: private evidence for the Slingshot scan, never committed
+threat-model/
+docs/threat-model/

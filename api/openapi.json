@@ -1,0 +1,67 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Sites API (synthetic)",
+    "version": "1.0.0",
+    "description": "Two operations behind Kong key-auth. The security block documents Kong's apikey header; lib/stack.ts strips it before creating the Gateway target (OpenAPI targets don't support spec-level security; the Gateway's API key provider injects the header)."
+  },
+  "security": [{ "apikey": [] }],
+  "servers": [{ "url": "https://example.invalid" }],
+  "paths": {
+    "/sites/{siteId}": {
+      "get": {
+        "operationId": "getSite",
+        "summary": "Read a site's name and status.",
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Site id, e.g. SITE-001" }
+        ],
+        "responses": {
+          "200": { "description": "The site", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Site" } } } },
+          "404": { "description": "Unknown site" }
+        }
+      }
+    },
+    "/sites/{siteId}/status": {
+      "put": {
+        "operationId": "setSiteStatus",
+        "summary": "Change a site's status (write operation).",
+        "parameters": [
+          { "name": "siteId", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Site id, e.g. SITE-001" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": { "status": { "type": "string", "enum": ["active", "paused", "closed"] } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "The updated site", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Site" } } } },
+          "400": { "description": "Invalid status" },
+          "404": { "description": "Unknown site" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "apikey": { "type": "apiKey", "in": "header", "name": "apikey" }
+    },
+    "schemas": {
+      "Site": {
+        "type": "object",
+        "required": ["siteId", "name", "status"],
+        "properties": {
+          "siteId": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    }
+  }
+}

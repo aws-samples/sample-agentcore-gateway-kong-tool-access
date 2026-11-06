@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT-0
+# ASH (Automated Security Helper) config.
+# ASH's static scanners honor .gitignore, but its dependency scanners (npm-audit, grype) also read
+# node_modules/, which is why the bundled-dependency suppressions below are path-scoped to it.
+# To scan the infrastructure too, run `npx cdk synth` first. ASH adds cdk.out/*.template.json to the scan
+# even though cdk.out/ is git-ignored; confirm in the Checkov output that a `cloudformation` section ran.
+# The synthesized template contains your account and VPC IDs: keep security-scan-results/ private.
+project_name: agentcore-kong-tool-access
+fail_on_findings: true
+global_settings:
+  severity_threshold: MEDIUM
+  ignore_paths:
+    - path: security-scan-results/**
+      reason: Scanner output.
+  suppressions:
+    - rule_id: GHSA-g3hv-75wg-m249-minimatch
+      path: package-lock.json
+      reason: minimatch 10.2.6 bundled inside aws-cdk-lib (bundledDependencies, so npm overrides cannot reach it; aws-cdk-lib 2.275.0 still bundles it). Used at synth time only, on this repo's own asset-exclude patterns, never on untrusted input. Top-level minimatch is overridden to 11.0.4. Re-check on aws-cdk-lib upgrades.
+      expiration: '2027-02-05'
+    - rule_id: GHSA-g3hv-75wg-m249
+      path: node_modules/aws-cdk-lib/**
+      reason: npm-audit's view of the same minimatch bundled inside aws-cdk-lib (bundledDependencies, so npm overrides cannot reach it). Synth time only, never on untrusted input.
+      expiration: '2027-02-05'
+    - rule_id: npm-audit-transitive-aws-cdk-lib
+      path: node_modules/aws-cdk-lib/**
+      reason: The same bundled-minimatch advisory, reported against aws-cdk-lib as a transitive finding.
+      expiration: '2027-02-05'
+    - rule_id: GHSA-6w46-j5rx-g56g-pytest
+      path: node_modules/aws-cdk/lib/init-templates/**
+      reason: pytest pins inside the aws-cdk CLI's own `cdk init` scaffold templates; never installed by this repo (the README pins pytest==9.2.0).
+      expiration: '2027-02-05'
+    - rule_id: SECRET-BASE64-HIGH-ENTROPY-STRING
+      path: cdk.out/KtaToolAccess.template.json
+      reason: Base64 container env (KONG_DECLARATIVE_B64 = kong/kong.yaml with only the __KONG_API_KEY__ placeholder; API_B64 = api/server.py) and hash-suffixed CloudFormation logical IDs. The real key is injected at runtime from Secrets Manager and never appears in the template.
+      expiration: '2027-02-05'
+scanners:
+  bandit:
+    enabled: true
+    options:
+      excluded_paths:
+        - path: node_modules
+          reason: Third-party package source (git-ignored, not shipped); dependencies are audited by npm-audit and grype.
+        - path: .venv
+          reason: Local virtualenv (git-ignored, not shipped); demo dependencies are pinned in demo/requirements.txt.

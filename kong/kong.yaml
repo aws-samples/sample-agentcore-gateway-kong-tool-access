@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT-0
+# Kong OSS, DB-less. Only /sites is routed, only over TLS (Kong listens on 8443 with ssl), and every
+# request on it needs a valid `apikey` header (key-auth, bundled in Kong OSS). The AgentCore Gateway
+# injects that header from its API key credential provider. The key placeholder below is replaced inside
+# the container at start with the Secrets Manager value ECS injects; the start command refuses to run
+# unless it appears exactly once. The key is never in the repo or the CloudFormation template.
+_format_version: "3.0"
+
+services:
+  - name: sites-api
+    url: http://127.0.0.1:9100
+    routes:
+      - name: sites
+        paths: ["/sites"]
+        strip_path: false
+        protocols: [https]
+
+plugins:
+  - name: key-auth
+    route: sites
+    config:
+      key_names: [apikey]
+      hide_credentials: true   # don't forward the key to the upstream API
+
+consumers:
+  - username: agentcore-gateway
+
+keyauth_credentials:
+  - consumer: agentcore-gateway
+    key: "__KONG_API_KEY__"
